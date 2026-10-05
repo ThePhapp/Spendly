@@ -1,23 +1,48 @@
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { getChatGPTUser } from "@/app/chatgpt-auth";
-import { getDb } from "@/db";
-import { accounts, categories, transactions } from "@/db/schema";
+import { getAppUser } from "@/app/auth";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
-const transactionSchema = z.object({ id:z.string().min(1).max(120), type:z.enum(["income","expense","transfer"]), amount:z.number().positive().max(1_000_000_000_000), description:z.string().trim().min(2).max(160), category:z.string().max(80), account:z.string().max(80), date:z.string().min(8) });
+const transactionSchema = z.object({
+  id: z.string().min(1).max(120),
+  type: z.enum(["income", "expense", "transfer"]),
+  amount: z.number().positive().max(1_000_000_000_000),
+  description: z.string().trim().min(2).max(160),
+  category: z.string().max(80),
+  account: z.string().max(80),
+  date: z.string().datetime({ offset: true }).or(z.string().datetime()),
+});
 
 export async function POST(request: Request) {
-  const user=await getChatGPTUser(); if(!user)return Response.json({error:"Unauthorized"},{status:401});
-  const parsed=transactionSchema.safeParse(await request.json().catch(()=>null)); if(!parsed.success)return Response.json({error:"Dữ liệu giao dịch không hợp lệ",issues:parsed.error.flatten()},{status:400});
-  const db=getDb(); const [account]=await db.select({id:accounts.id}).from(accounts).where(and(eq(accounts.userId,user.userId),eq(accounts.name,parsed.data.account))).limit(1); const [category]=await db.select({id:categories.id}).from(categories).where(and(eq(categories.userId,user.userId),eq(categories.name,parsed.data.category))).limit(1);
-  if(!account)return Response.json({error:"Không tìm thấy tài khoản"},{status:404});
-  await db.insert(transactions).values({id:parsed.data.id,userId:user.userId,accountId:account.id,categoryId:category?.id,type:parsed.data.type,amount:parsed.data.amount,description:parsed.data.description,transactionDate:parsed.data.date});
-  return Response.json({ok:true,id:parsed.data.id},{status:201});
+  const user = await getAppUser();
+  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const parsed = transactionSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return Response.json({ error: "Dữ liệu giao dịch không hợp lệ", issues: parsed.error.flatten() }, { status: 400 });
+  if (!isSupabaseConfigured()) return Response.json({ ok: true, id: parsed.data.id, demo: true }, { status: 201 });
+
+  const supabase = await createClient();
+  const [accountResult, categoryResult] = await Promise.all([
+    supabase.from("accounts").select("id").eq("user_id", user.userId).eq("name", parsed.data.account).maybeSingle(),
+    supabase.from("categories").select("id").eq("user_id", user.userId).eq("name", parsed.data.category).maybeSingle(),
+  ]);
+  if (accountResult.error) return Response.json({ error: accountResult.error.message }, { status: 500 });
+  if (categoryResult.error) return Response.json({ error: categoryResult.error.message }, { status: 500 });
+  if (!accountResult.data) return Response.json({ error: "Không tìm thấy tài khoản" }, { status: 404 });
+
+  const { error } = await supabase.from("transactions").insert({ id: parsed.data.id, user_id: user.userId, account_id: accountResult.data.id, category_id: categoryResult.data?.id ?? null, type: parsed.data.type, amount: parsed.data.amount, description: parsed.data.description, transaction_date: parsed.data.date });
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ ok: true, id: parsed.data.id }, { status: 201 });
 }
 
 export async function DELETE(request: Request) {
-  const user=await getChatGPTUser(); if(!user)return Response.json({error:"Unauthorized"},{status:401});
-  const id=new URL(request.url).searchParams.get("id"); if(!id)return Response.json({error:"Thiếu mã giao dịch"},{status:400});
-  await getDb().delete(transactions).where(and(eq(transactions.id,id),eq(transactions.userId,user.userId)));
-  return Response.json({ok:true});
+  const user = await getAppUser();
+  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return Response.json({ error: "Thiếu mã giao dịch" }, { status: 400 });
+  if (!isSupabaseConfigured()) return Response.json({ ok: true, demo: true });
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", user.userId);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ ok: true });
 }
