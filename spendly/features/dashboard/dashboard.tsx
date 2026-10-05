@@ -14,6 +14,7 @@ import { accounts as seedAccounts, budgets as seedBudgets, goals as seedGoals, m
 import { formatCurrency, savingRate, totalBalance, totalExpense, totalIncome } from "@/features/finance/calculations";
 import { FeaturePage } from "@/features/app/feature-pages";
 import { TransactionDialog } from "@/features/transactions/transaction-dialog";
+import type { Account, Budget, Goal, Transaction } from "@/features/finance/types";
 
 const nav = [
   ["Tổng quan", LayoutDashboard], ["Giao dịch", WalletCards], ["Ngân sách", PiggyBank], ["Tài khoản", WalletCards], ["Mục tiêu", Target], ["Báo cáo", ChartNoAxesCombined], ["Danh mục", Tags], ["Cài đặt", Settings],
@@ -21,18 +22,20 @@ const nav = [
 
 const icons: Record<string, React.ElementType> = { "Ăn uống": Utensils, "Di chuyển": Car, "Nhà ở": House, "Giải trí": Play };
 
-export function Dashboard() {
+export function Dashboard({ initialData }: { initialData?: { accounts: Account[]; transactions: Transaction[]; budgets: Budget[]; goals: Goal[] } }) {
   const { resolvedTheme, setTheme } = useTheme();
   const [range, setRange] = useState("6 tháng");
   const [active, setActive] = useState("Tổng quan");
   const [addOpen, setAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [globalSearch, setGlobalSearch] = useState("");
-  const [transactions, setTransactions] = useState(seedTransactions);
-  const [accounts] = useState(seedAccounts);
-  const [budgets] = useState(seedBudgets);
-  const [goals, setGoals] = useState(seedGoals);
+  const [transactions, setTransactions] = useState(initialData?.transactions ?? seedTransactions);
+  const [accounts] = useState(initialData?.accounts ?? seedAccounts);
+  const [budgets] = useState(initialData?.budgets ?? seedBudgets);
+  const [goals, setGoals] = useState(initialData?.goals ?? seedGoals);
   const income = totalIncome(transactions), expense = totalExpense(transactions), saved = income - expense;
+  async function persistTransaction(item: Transaction) { setTransactions(items=>[item,...items]); const response=await fetch("/api/transactions",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(item)}); if(!response.ok)toast.error("Chưa thể đồng bộ giao dịch, vui lòng thử lại"); }
+  async function removeTransaction(id: string) { const before=transactions; setTransactions(items=>items.filter(i=>i.id!==id)); const response=await fetch(`/api/transactions?id=${encodeURIComponent(id)}`,{method:"DELETE"}); if(!response.ok){setTransactions(before);toast.error("Không thể xóa giao dịch");return} toast.success("Đã xóa giao dịch"); }
   return <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[252px_1fr]">
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col bg-sidebar text-sidebar-foreground lg:flex">
       <div className="flex h-20 items-center gap-3 border-b border-sidebar-border px-7"><div className="grid size-9 place-items-center rounded-xl bg-blue-500 font-black text-white">S</div><span className="text-xl font-bold tracking-tight text-white">Spendly</span></div>
@@ -59,7 +62,7 @@ export function Dashboard() {
       </div> : <FeaturePage active={active} transactions={transactions} accounts={accounts} budgets={budgets} goals={goals} onAdd={()=>setAddOpen(true)} onDeleteTransaction={setDeleteId} onDuplicateTransaction={(item)=>{setTransactions(items=>[{...item,id:crypto.randomUUID(),description:`${item.description} (bản sao)`},...items]);toast.success("Đã nhân bản giao dịch")}} onAddGoalMoney={(id,amount)=>setGoals(items=>items.map(g=>g.id===id?{...g,saved:g.saved+amount}:g))}/>} 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t bg-card px-2 lg:hidden">{[["Tổng quan",LayoutDashboard],["Giao dịch",WalletCards],["",Plus],["Ngân sách",PiggyBank],["Cài đặt",Menu]].map(([label,Icon],i)=><button key={i} onClick={()=>i===2?setAddOpen(true):setActive(label as string)} className={`flex flex-col items-center justify-center gap-1 text-[11px] ${active===label?"text-blue-600":"text-muted-foreground"}`}>{i===2?<span className="-mt-7 grid size-12 place-items-center rounded-full bg-blue-600 text-white shadow-lg"><Plus/></span>:<><Icon className="size-5"/><span>{label as string}</span></>}</button>)}</nav>
     </main>
-    <TransactionDialog open={addOpen} onOpenChange={setAddOpen} onSubmit={(item)=>setTransactions(items=>[item,...items])}/>
-    <AlertDialog open={!!deleteId} onOpenChange={(open)=>!open&&setDeleteId(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Xóa giao dịch?</AlertDialogTitle><AlertDialogDescription>Giao dịch sẽ bị xóa khỏi lịch sử và các báo cáo liên quan.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Hủy</AlertDialogCancel><AlertDialogAction onClick={()=>{if(deleteId)setTransactions(items=>items.filter(i=>i.id!==deleteId));setDeleteId(null);toast.success("Đã xóa giao dịch")}}>Xóa giao dịch</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <TransactionDialog open={addOpen} onOpenChange={setAddOpen} onSubmit={(item)=>void persistTransaction(item)}/>
+    <AlertDialog open={!!deleteId} onOpenChange={(open)=>!open&&setDeleteId(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Xóa giao dịch?</AlertDialogTitle><AlertDialogDescription>Giao dịch sẽ bị xóa khỏi lịch sử và các báo cáo liên quan.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Hủy</AlertDialogCancel><AlertDialogAction onClick={()=>{if(deleteId)void removeTransaction(deleteId);setDeleteId(null)}}>Xóa giao dịch</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;
 }
