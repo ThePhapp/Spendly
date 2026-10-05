@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { accountBalance, budgetUsage, cashFlow, goalProgress, savingRate, totalExpense, totalIncome } from "../features/finance/calculations.ts";
-import type { Transaction } from "../features/finance/types.ts";
+import { accountBalance, budgetUsage, cashFlow, goalProgress, savingRate, totalExpense, totalIncome } from "../features/finance/calculations";
+import type { Transaction } from "../features/finance/types";
 
 const rows: Transaction[] = [
   {id:"1",type:"income",amount:15_000_000,description:"Lương",category:"Lương",account:"Bank",date:"2026-10-01",color:"#0f0"},
