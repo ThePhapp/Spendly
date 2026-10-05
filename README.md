@@ -1,6 +1,16 @@
 # Spendly
 
-Spendly là ứng dụng quản lý tài chính cá nhân responsive, chạy trên Next.js 16 và lưu dữ liệu bằng Supabase PostgreSQL. Ứng dụng có chế độ demo tự động khi chưa cấu hình Supabase, vì vậy có thể xem giao diện ngay sau khi clone.
+Spendly là ứng dụng quản lý tài chính cá nhân responsive, được triển khai hoàn toàn trên Cloudflare.
+
+## Kiến trúc Cloudflare
+
+- **Cloudflare Workers** chạy ứng dụng Next.js 16 thông qua Vinext.
+- **Cloudflare D1** lưu tài khoản, giao dịch, ngân sách, mục tiêu và cài đặt.
+- **Cloudflare R2** lưu hóa đơn/chứng từ đính kèm.
+- **Cloudflare Access** xác thực người dùng bằng One-time PIN hoặc nhà cung cấp danh tính đã cấu hình.
+- Worker kiểm tra chữ ký JWT của Cloudflare Access trước khi truy cập dữ liệu người dùng.
+
+Ứng dụng không cần Supabase, Vercel, Render hoặc máy chủ Node riêng.
 
 ## Tính năng chính
 
@@ -9,57 +19,98 @@ Spendly là ứng dụng quản lý tài chính cá nhân responsive, chạy tr�
 - Ngân sách, tài khoản, mục tiêu tiết kiệm, báo cáo, lịch và giao dịch định kỳ.
 - Light/dark mode và giao diện thích ứng cho mobile, tablet, laptop, desktop.
 - Mobile bottom navigation, tablet compact sidebar và desktop full sidebar.
-- Supabase Auth bằng email/mật khẩu, quên mật khẩu và session SSR bằng cookie.
-- PostgreSQL schema đầy đủ với foreign key, index và Row Level Security theo người dùng.
-- Cấu hình sẵn cho Vercel và Render.
+- Dữ liệu của mỗi người dùng được cô lập bằng `user_id` lấy từ Access JWT đã xác thực.
 
-## Công nghệ
+## Yêu cầu
 
-Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui, Recharts, Supabase Auth/PostgreSQL, React Hook Form, Zod và Node test runner.
+- Node.js `>=22.13.0 <25`
+- Tài khoản Cloudflare có Workers, D1, R2 và Zero Trust Access
 
 ## Chạy local
 
-Yêu cầu Node.js `>=22.13.0 <25`.
-
 ```bash
 npm install
+npm run cf:migrate:local
 npm run dev
 ```
 
-Mở `http://localhost:3000`. Khi chưa có `.env.local`, ứng dụng dùng dữ liệu demo và không cần database.
+Mở `http://127.0.0.1:5173`. Localhost tự dùng tài khoản demo; không cần đăng nhập Cloudflare Access.
 
-## Kết nối Supabase
-
-1. Tạo một project mới trong Supabase.
-2. Áp dụng file migration [supabase/migrations/202610050001_initial_schema.sql](supabase/migrations/202610050001_initial_schema.sql) bằng SQL Editor, hoặc dùng Supabase CLI:
+Để chạy bản build Workers gần với production hơn:
 
 ```bash
-npx supabase login
-npx supabase link --project-ref YOUR_PROJECT_REF
-npm run db:push
+npm run build
+npm run start
 ```
 
-3. Sao chép `.env.example` thành `.env.local` và điền hai giá trị trong `Project Settings → API`:
+## Khởi tạo Cloudflare lần đầu
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
+Đăng nhập Wrangler:
+
+```bash
+npx wrangler login
 ```
 
-Không thêm service-role key vào biến `NEXT_PUBLIC_*`. Ứng dụng chỉ cần publishable key; quyền truy cập dữ liệu được bảo vệ bằng session người dùng và RLS.
+Tạo D1 và để Wrangler ghi `database_id` vào `wrangler.jsonc`:
 
-4. Trong `Authentication → URL Configuration`, đặt Site URL và thêm Redirect URLs:
+```bash
+npm run cf:create-db
+```
+
+Tạo bucket R2:
+
+```bash
+npm run cf:create-r2
+```
+
+Áp dụng migration lên D1 production:
+
+```bash
+npm run cf:migrate:remote
+```
+
+## Cấu hình Cloudflare Access
+
+1. Mở **Cloudflare Zero Trust → Access → Applications**.
+2. Tạo một **Self-hosted application** cho domain production của Spendly.
+3. Chọn One-time PIN hoặc Identity Provider, sau đó tạo policy cho các email được phép dùng.
+4. Sao chép **Application Audience (AUD)** trong phần cấu hình ứng dụng.
+5. Thay hai giá trị mẫu trong `wrangler.jsonc`:
+
+```jsonc
+"vars": {
+  "CF_ACCESS_TEAM_DOMAIN": "your-team.cloudflareaccess.com",
+  "CF_ACCESS_AUD": "your-access-application-aud"
+}
+```
+
+Cloudflare Access phải bảo vệ hostname production. Ứng dụng vẫn xác minh Access JWT tại Worker để ngăn giả mạo header danh tính.
+
+## Deploy
+
+```bash
+npm run build
+npm run deploy
+```
+
+Sau lần deploy đầu tiên, thêm custom domain/route trong **Workers & Pages → spendly → Settings → Domains & Routes**, rồi dùng chính hostname đó cho Cloudflare Access.
+
+Endpoint kiểm tra hệ thống:
 
 ```text
-http://localhost:3000/**
-https://your-production-domain.com/**
+GET /api/health
 ```
 
-Sau lần đăng ký đầu tiên, trigger tạo hồ sơ/cài đặt và ứng dụng seed workspace mẫu riêng cho người dùng đó.
+## API hóa đơn trên R2
+
+- `POST /api/receipts`: upload `multipart/form-data` với field `file`.
+- `GET /api/receipts?key=...`: tải file thuộc người dùng hiện tại.
+- `DELETE /api/receipts?key=...`: xóa file thuộc người dùng hiện tại.
+- Giới hạn mỗi file là 5 MB; hỗ trợ JPG, PNG, WebP và PDF.
 
 ## Database
 
-Migration tạo các bảng:
+Migration D1 nằm trong thư mục `drizzle/` và tạo các bảng:
 
 ```text
 users
@@ -74,37 +125,6 @@ tags
 transaction_tags
 notifications
 user_settings
-```
-
-Mọi bảng nghiệp vụ đều bật Row Level Security với `auth.uid() = user_id`. Amount dùng `numeric(18,2)` để hỗ trợ thêm tiền tệ khác ngoài VND trong tương lai.
-
-## Deploy Vercel
-
-1. Import repository vào Vercel. Framework được nhận diện là Next.js; [vercel.json](vercel.json) đã khai báo lệnh cài đặt/build.
-2. Thêm `NEXT_PUBLIC_SUPABASE_URL` và `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` cho Production, Preview và Development.
-3. Deploy, sau đó thêm domain Vercel vào Supabase Auth Redirect URLs. Với preview deployment có thể dùng mẫu `https://*-YOUR_TEAM.vercel.app/**`.
-
-Có thể deploy bằng CLI:
-
-```bash
-npx vercel
-npx vercel --prod
-```
-
-## Deploy Render
-
-[render.yaml](render.yaml) khai báo một Node Web Service, health check `/api/health`, Node 22 và hai biến môi trường Supabase.
-
-1. Chọn `New → Blueprint` trong Render và kết nối repository.
-2. Nhập hai biến Supabase khi Render yêu cầu.
-3. Sau khi service có URL `onrender.com`, thêm URL đó vào Supabase Auth Site URL/Redirect URLs.
-
-Nếu cấu hình thủ công, dùng:
-
-```text
-Build Command: npm ci && npm run build
-Start Command: npm run start
-Health Check: /api/health
 ```
 
 ## Kiểm tra chất lượng
