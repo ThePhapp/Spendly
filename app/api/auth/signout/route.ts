@@ -1,10 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-
-export async function POST() {
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    await supabase.auth.signOut();
-  }
-  return Response.json({ ok: true });
+function logout(request: Request) {
+  return Response.redirect(new URL("/cdn-cgi/access/logout", request.url), 303);
 }
+
+export const GET = logout;
+export const POST = logout;

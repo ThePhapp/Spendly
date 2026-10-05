@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
-import { Slot } from "radix-ui"
+import { PanelLeftIcon } from "@/components/icons"
+import * as Slot from "radix-ui/slot"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"

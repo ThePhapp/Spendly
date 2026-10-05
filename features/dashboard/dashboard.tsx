@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Bell, ChevronDown, CircleHelp, LayoutDashboard, LogOut, Moon, Plus, Search, Settings, Sun, Target, TrendingDown, TrendingUp, WalletCards, Tags, ChartNoAxesCombined, PiggyBank, ArrowUpRight, ArrowDownRight, Utensils, Car, House, Play, Menu, Lightbulb, BadgeCheck, ChartSpline } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts/es6/index.js";
+import { Bell, ChevronDown, CircleHelp, LayoutDashboard, LogOut, Moon, Plus, Search, Settings, Sun, Target, TrendingDown, TrendingUp, WalletCards, Tags, ChartNoAxesCombined, PiggyBank, ArrowUpRight, ArrowDownRight, Utensils, Car, House, Play, Menu, Lightbulb, BadgeCheck, ChartSpline } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +24,6 @@ const nav = [
 const icons: Record<string, React.ElementType> = { "Ăn uống": Utensils, "Di chuyển": Car, "Nhà ở": House, "Giải trí": Play };
 
 export function Dashboard({ initialData }: { initialData?: WorkspaceData }) {
-  const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const [range, setRange] = useState("6 tháng");
   const [active, setActive] = useState("Tổng quan");
@@ -55,7 +53,7 @@ export function Dashboard({ initialData }: { initialData?: WorkspaceData }) {
       <div className="flex h-20 items-center gap-3 border-b border-sidebar-border px-7"><div className="grid size-9 place-items-center rounded-xl bg-blue-500 font-black text-white">S</div><span className="text-xl font-bold tracking-tight text-white">Spendly</span></div>
       <nav className="flex-1 space-y-1.5 px-4 py-6">{nav.map(([label, Icon]) => <button key={label} onClick={()=>setActive(label)} className={`flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition ${active === label ? "bg-blue-500 text-white shadow-lg shadow-blue-950/20" : "hover:bg-sidebar-accent hover:text-white"}`}><Icon className="size-[18px]" />{label}</button>)}</nav>
       <div className="m-4 rounded-2xl border border-sidebar-border bg-sidebar-accent/60 p-4"><CircleHelp className="mb-3 size-5 text-blue-400"/><p className="text-sm font-semibold text-white">Cần hỗ trợ?</p><p className="mt-1 text-xs leading-5 text-slate-400">Khám phá hướng dẫn sử dụng Spendly.</p></div>
-      <div className="flex items-center gap-3 border-t border-sidebar-border p-4"><div className="grid size-10 place-items-center rounded-full bg-blue-100 font-bold text-blue-700">{initials}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-white">{profile.name}</p><p className="truncate text-xs text-slate-400">{profile.email}</p></div>{profile.isDemo?<ChevronDown className="size-4"/>:<button type="button" aria-label="Đăng xuất" title="Đăng xuất" onClick={async()=>{await fetch("/api/auth/signout",{method:"POST"});router.replace("/login");router.refresh()}} className="grid size-8 place-items-center rounded-lg hover:bg-sidebar-accent hover:text-white"><LogOut className="size-4"/></button>}</div>
+      <div className="flex items-center gap-3 border-t border-sidebar-border p-4"><div className="grid size-10 place-items-center rounded-full bg-blue-100 font-bold text-blue-700">{initials}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-white">{profile.name}</p><p className="truncate text-xs text-slate-400">{profile.email}</p></div>{profile.isDemo?<ChevronDown className="size-4"/>:<a href="/api/auth/signout" aria-label="Đăng xuất" title="Đăng xuất" className="grid size-8 place-items-center rounded-lg hover:bg-sidebar-accent hover:text-white"><LogOut className="size-4"/></a>}</div>
     </aside>
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-20 flex-col border-r border-sidebar-border bg-sidebar py-4 text-sidebar-foreground md:flex lg:hidden">
       <button type="button" onClick={()=>setActive("Tổng quan")} className="mx-auto grid size-11 place-items-center rounded-2xl bg-blue-500 text-lg font-black text-white" aria-label="Về tổng quan">S</button>

@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CalendarDays, Car, ChevronLeft, ChevronRight, CircleDollarSign, Copy, CreditCard, Ellipsis, Filter, Gift, House, Laptop, MoreHorizontal, Pencil, PiggyBank, Plane, Plus, ReceiptText, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Tag, Trash2, TrendingDown, TrendingUp, Utensils, Wallet } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts/es6/index.js";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CalendarDays, Car, ChevronLeft, ChevronRight, CircleDollarSign, Copy, CreditCard, Ellipsis, Filter, Gift, House, Laptop, MoreHorizontal, Pencil, PiggyBank, Plane, Plus, ReceiptText, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Tag, Trash2, TrendingDown, TrendingUp, Utensils, Wallet } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
