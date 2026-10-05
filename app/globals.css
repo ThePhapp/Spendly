@@ -139,3 +139,45 @@ body {
 * { border-color: var(--border); }
 button, a { -webkit-tap-highlight-color: transparent; }
 ::selection { background: #bfdbfe; color: #1e3a8a; }
+
+@media (max-width: 639px) {
+  table.responsive-transactions,
+  table.responsive-transactions tbody,
+  table.responsive-transactions tr,
+  table.responsive-transactions td {
+    display: block;
+    width: 100%;
+  }
+
+  table.responsive-transactions thead {
+    display: none;
+  }
+
+  table.responsive-transactions tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0.75rem;
+  }
+
+  table.responsive-transactions td {
+    padding: 0;
+    white-space: normal;
+  }
+
+  table.responsive-transactions td:nth-child(1) {
+    grid-row: 1 / span 2;
+  }
+
+  table.responsive-transactions td:nth-child(5) {
+    grid-column: 2;
+    grid-row: 1;
+    padding-left: 0.75rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  table.responsive-transactions td:nth-child(6) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
