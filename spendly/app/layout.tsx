@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Spendly — Tài chính cá nhân",
@@ -17,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased"><ThemeProvider>{children}<Toaster richColors position="top-center" /></ThemeProvider></body>
     </html>
   );
 }
