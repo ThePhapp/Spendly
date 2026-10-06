@@ -18,6 +18,8 @@ Cần chuẩn bị:
 - Một domain đang quản lý DNS trên Cloudflare nếu muốn dùng domain riêng và Cloudflare Access.
 - Mã nguồn đã được checkout trên máy deploy.
 
+Repo có file `.nvmrc` để Workers Builds dùng Node.js `22.15.0`, tương thích với `engines` trong `package.json`.
+
 Kiểm tra phiên bản:
 
 ```bash
@@ -237,6 +239,26 @@ npm run deploy
 Lưu ý: `npm run deploy` chỉ deploy artifact đã build, không tự chạy `npm run build`. Build sẽ tạo `dist/server/wrangler.json`; script deploy dùng chính file này.
 
 Nếu deploy thành công, Wrangler sẽ in URL Worker. Mở URL đó để kiểm tra nhanh, nhưng production nên truy cập qua custom domain đã được Access bảo vệ.
+
+### 7.1. Deploy bằng Workers Builds trong Dashboard
+
+Đây là project **Cloudflare Worker**, không phải Cloudflare Pages thuần. Nếu kết nối Git trong Cloudflare Dashboard, vào **Workers & Pages → chọn Worker → Settings → Builds** và cấu hình:
+
+| Trường | Giá trị |
+|---|---|
+| Root directory | `/` hoặc để mặc định |
+| Build command | `npm run build` |
+| Deploy command | `npm run deploy` |
+| Node.js version | `22.15.0` |
+| Package manager | `npm` |
+
+Nếu Dashboard có mục **Build variables**, thêm `NODE_VERSION=22.15.0`. File `.nvmrc` trong repo cũng khai báo cùng phiên bản để build tự nhận diện.
+
+Không dùng `npm run start` làm Deploy command. `start` chỉ chạy Wrangler local. Không chọn output directory kiểu Pages, vì `npm run build` tạo Worker artifact trong `dist/server` và `dist/client` rồi `npm run deploy` dùng `dist/server/wrangler.json`.
+
+Sau khi đổi Node hoặc build settings, chọn **Clear build cache** rồi chạy lại build. Workers Builds hỗ trợ override Node bằng `NODE_VERSION` hoặc `.nvmrc`; xem [Build image configuration](https://developers.cloudflare.com/workers/ci-cd/builds/build-image/) để biết thêm.
+
+Nếu đang tạo một **Pages project** riêng, hãy dừng cấu hình đó và kết nối repo dưới **Workers Builds**. Pages có pipeline/output khác với Worker Vinext hiện tại.
 
 ## 8. Kiểm tra sau deploy
 
