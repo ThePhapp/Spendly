@@ -1,35 +1,38 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "spendly",
-  "compatibility_date": "2026-10-05",
-  "compatibility_flags": ["nodejs_compat"],
-  "main": "vinext/server/fetch-handler",
-  "assets": {
-    "directory": "dist/client",
-    "not_found_handling": "none",
-    "binding": "ASSETS"
-  },
-  "cache": {
-    "enabled": true
-  },
-  "vars": {
-    "CF_ACCESS_TEAM_DOMAIN": "REPLACE_WITH_TEAM_DOMAIN",
-    "CF_ACCESS_AUD": "REPLACE_WITH_ACCESS_AUD"
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "spendly-db",
-      "migrations_dir": "drizzle"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "RECEIPTS",
-      "bucket_name": "spendly-receipts"
-    }
-  ],
-  "observability": {
-    "enabled": true
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "spendly",
+	"compatibility_date": "2026-10-05",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"main": "vinext/server/fetch-handler",
+	"assets": {
+		"directory": "dist/client",
+		"not_found_handling": "none",
+		"binding": "ASSETS"
+	},
+	"cache": {
+		"enabled": true
+	},
+	"vars": {
+		"CF_ACCESS_TEAM_DOMAIN": "REPLACE_WITH_TEAM_DOMAIN",
+		"CF_ACCESS_AUD": "REPLACE_WITH_ACCESS_AUD"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "spendly-db",
+			"migrations_dir": "drizzle",
+			"database_id": "a87c2cc6-cd2a-4266-9150-5c00b6455f78"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "RECEIPTS",
+			"bucket_name": "spendly-receipts"
+		}
+	],
+	"observability": {
+		"enabled": true
+	}
 }
