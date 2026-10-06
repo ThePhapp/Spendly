@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local Wrangler development.
+# Do not commit real credentials or tokens.
+CF_ACCESS_TEAM_DOMAIN=your-team.cloudflareaccess.com
+CF_ACCESS_AUD=your-access-application-aud

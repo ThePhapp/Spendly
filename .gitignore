@@ -32,6 +32,7 @@ yarn-error.log*
 .env*
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
 
 # typescript
 next-env.d.ts

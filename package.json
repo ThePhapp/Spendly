@@ -7,8 +7,10 @@
   },
   "scripts": {
     "dev": "vinext dev --port 5173",
+    "predev": "npm run cf:migrate:local",
     "build": "vite build",
     "start": "wrangler dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --port 5173 --inspector-port 0",
+    "prestart": "npm run cf:migrate:local",
     "deploy": "vinext-cloudflare deploy --config dist/server/wrangler.json",
     "preview": "npm run build && npm run start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

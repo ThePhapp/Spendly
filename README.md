@@ -88,6 +88,8 @@ Cloudflare Access phải bảo vệ hostname production. Ứng dụng vẫn xác
 
 ## Deploy
 
+Xem hướng dẫn đầy đủ tại [DEPLOY_CLOUDFLARE.md](./DEPLOY_CLOUDFLARE.md).
+
 ```bash
 npm run build
 npm run deploy
