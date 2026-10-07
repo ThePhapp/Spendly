@@ -1,11 +1,19 @@
 import type { Account, Budget, Goal, Transaction } from "./types";
 
-export const totalIncome = (items: Transaction[]) => items.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
-export const totalExpense = (items: Transaction[]) => items.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
+// Records created before status was introduced are treated as completed.
+const isPosted = (item: Transaction) => item.status !== "pending";
+
+export const totalIncome = (items: Transaction[]) => items.filter((item) => isPosted(item) && item.type === "income").reduce((sum, item) => sum + item.amount, 0);
+export const totalExpense = (items: Transaction[]) => items.filter((item) => isPosted(item) && item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
 export const totalBalance = (items: Account[]) => items.reduce((sum, item) => sum + item.balance, 0);
-export const accountBalance = (openingBalance: number, accountName: string, items: Transaction[]) => items.filter(item=>item.account===accountName).reduce((balance,item)=>{
+export const accountBalance = (openingBalance: number, accountName: string, items: Transaction[]) => items.filter(item=>item.account===accountName && isPosted(item)).reduce((balance,item)=>{
   if(item.type==="income")return balance+item.amount;
   if(item.type==="expense")return balance-item.amount;
+  if(item.type==="transfer") {
+    if(item.transferDirection==="in")return balance+item.amount;
+    if(item.transferDirection==="out")return balance-item.amount;
+  }
+  // Legacy one-sided transfers lack enough information to change a balance.
   return balance;
 },openingBalance);
 export const budgetUsage = (budget: Budget) => Math.min(999, budget.limit ? (budget.spent / budget.limit) * 100 : 0);
