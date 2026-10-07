@@ -14,7 +14,7 @@
     "deploy": "vinext-cloudflare deploy --config dist/server/wrangler.json",
     "preview": "npm run build && npm run start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "vinext typegen && tsc --noEmit",
     "test": "node --test --import tsx tests/**/*.test.ts",
     "db:generate": "drizzle-kit generate",
     "cf:check": "vinext check",
