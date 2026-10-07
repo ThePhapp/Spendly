@@ -34,6 +34,9 @@ test("Worker persists paired transfers, validates input, and deletes both legs",
     assert.equal((await post(payload)).status, 409);
     const html = await (await fetch(base)).text();
     for (const row of transactions) assert.ok(html.includes(row.id), "Persisted transfer leg must survive reload");
+    const renderedText = html.replace(/<[^>]*>/g, "");
+    assert.ok(renderedText.includes("Chuyển tiền · MoMo"), "Joined category and account names must not collide in D1 batch results");
+    assert.ok(renderedText.includes("Chuyển tiền · Vietcombank"));
     const removed = await fetch(`${base}/api/transactions?id=${transactions[1].id}`, { method: "DELETE" });
     assert.equal(removed.status, 200);
     const afterDelete = await (await fetch(base)).text();
