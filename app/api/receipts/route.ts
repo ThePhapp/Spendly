@@ -8,7 +8,8 @@ export async function POST(request: Request) {
   const user = await getAppUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const formData = await request.formData();
+  const formData = await request.formData().catch(() => null);
+  if (!formData) return Response.json({ error: "Dữ liệu tải lên không hợp lệ" }, { status: 400 });
   const file = formData.get("file");
   if (!(file instanceof File)) return Response.json({ error: "Thiếu tệp hóa đơn" }, { status: 400 });
   if (!ALLOWED_TYPES.has(file.type)) return Response.json({ error: "Chỉ hỗ trợ JPG, PNG, WebP hoặc PDF" }, { status: 415 });
